@@ -1,16 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { CART_STORAGE_KEY } from '../../src/lib/cartStorage'
-import { memoryStorage } from '../support/memoryStorage'
+import { storageWithOneTee } from '../support/carts'
 import { renderApp } from '../support/renderApp'
-
-// Una remera clásica azul marino L: $ 24.900.
-const storageWithOneTee = () =>
-  memoryStorage({
-    [CART_STORAGE_KEY]: JSON.stringify({
-      lines: [{ productSlug: 'remera-clasica', colorId: 'marino', size: 'L', quantity: 1 }],
-    }),
-  })
 
 async function openCart() {
   const app = renderApp('/', storageWithOneTee())

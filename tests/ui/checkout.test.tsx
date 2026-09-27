@@ -1,31 +1,8 @@
 import { screen, within } from '@testing-library/react'
-import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { CART_STORAGE_KEY } from '../../src/lib/cartStorage'
-import { memoryStorage } from '../support/memoryStorage'
+import { storageWithCart } from '../support/carts'
+import { fillValidForm } from '../support/checkoutForm'
 import { renderApp } from '../support/renderApp'
-
-// Dos remeras clásicas azul marino L y un buzo con capucha gris M: $ 119.700 + $ 6.900 de envío.
-const storageWithCart = () =>
-  memoryStorage({
-    [CART_STORAGE_KEY]: JSON.stringify({
-      lines: [
-        { productSlug: 'remera-clasica', colorId: 'marino', size: 'L', quantity: 2 },
-        { productSlug: 'buzo-capucha', colorId: 'gris', size: 'M', quantity: 1 },
-      ],
-    }),
-  })
-
-async function fillValidForm(user: UserEvent) {
-  await user.type(screen.getByLabelText('Email'), 'lucas.fernandez@example.com')
-  await user.type(screen.getByLabelText('Nombre'), 'Lucas')
-  await user.type(screen.getByLabelText('Apellido'), 'Fernández')
-  await user.type(screen.getByLabelText('Teléfono'), '11 4567-8910')
-  await user.type(screen.getByLabelText('Calle y número'), 'Av. Corrientes 1234')
-  await user.type(screen.getByLabelText('Localidad'), 'Buenos Aires')
-  await user.selectOptions(screen.getByLabelText('Provincia'), 'Ciudad Autónoma de Buenos Aires')
-  await user.type(screen.getByLabelText('Código postal'), 'C1043AAZ')
-}
 
 describe('checkout', () => {
   it('con el carrito vacío no muestra el formulario y ofrece volver a la tienda', () => {
