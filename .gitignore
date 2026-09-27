@@ -30,3 +30,4 @@ dist-ssr
 
 # Configuración local de Claude Code (permisos de esta máquina)
 .claude/settings.local.json
+.vercel
