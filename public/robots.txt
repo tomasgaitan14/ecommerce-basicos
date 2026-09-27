@@ -1,0 +1,5 @@
+# basicos es una tienda ficticia: cada página lleva <meta name="robots" content="noindex">.
+# El rastreo queda permitido para que los buscadores puedan leer esa etiqueta y para las
+# previews de links (LinkedIn, WhatsApp).
+User-agent: *
+Allow: /

@@ -3,8 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>basicos</title>
+    <meta name="theme-color" content="#ffffff" />
+    <title>basicos | Ropa lisa para hombre</title>
+    <meta
+      name="description"
+      content="Remeras, buzos, camperas y pantalones lisos para hombre, en colores que combinan entre sí. Tienda de demostración, proyecto de portfolio."
+    />
+    <!-- Tienda ficticia: que no aparezca en buscadores como si vendiera de verdad. La preview del link no depende de esto. -->
+    <meta name="robots" content="noindex" />
+
+    <!-- Preview del link al compartirlo (LinkedIn, WhatsApp, X). Las URLs tienen que ser absolutas. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="basicos" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:title" content="basicos | Ropa lisa para hombre" />
+    <meta
+      property="og:description"
+      content="Remeras, buzos, camperas y pantalones lisos para hombre, en colores que combinan entre sí. Tienda de demostración, proyecto de portfolio."
+    />
+    <meta property="og:image" content="%SITE_URL%/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="La remera clásica de basicos en ocho colores, bajo el título Todo liso. Todo combina."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- El título de la portada usa Archivo: precargarla evita que el texto salte al cambiar de fuente. -->
+    <link rel="preload" href="/src/assets/fonts/archivo-latin-wdth-wght.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <div id="root"></div>
