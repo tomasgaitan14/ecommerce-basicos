@@ -35,10 +35,14 @@ Ninguno. No tiene backend, flujos de n8n ni base de datos.
 ## Estado actual
 
 Tienda completa y funcionando en local (2026-09-27): portada, catálogo por categoría con orden,
-ficha de producto, carrito lateral, checkout simulado, confirmación y 404. 118 tests en verde
-(lógica + flujos de UI), build y lint limpios. Revisada en Chrome en escritorio y a 390 px.
+ficha de producto, carrito lateral, checkout simulado, confirmación y 404. Build y lint limpios.
+Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 
-**Sin deploy y sin remoto de git todavía.** Commits locales: scaffold, lógica, UI y docs. El repo usa la identidad personal con el mail noreply de GitHub, no la global de trabajo.
+Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
+(preview del link). 129 tests en verde (lógica + flujos de UI).
+
+**Sin deploy y sin remoto de git todavía.** Todo está commiteado en local (scaffold, lógica, UI,
+pasada final y docs). El repo usa la identidad personal con el mail noreply de GitHub, no la global de trabajo.
 
 ## Decisiones tomadas
 
@@ -58,7 +62,10 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. 118 
   al catálogo en la misma posición de scroll es parte de la experiencia de compra.
 - **Node 24 solo en este proyecto.** El `default` de nvm quedó en 22.11.0 para no afectar a los
   otros proyectos. Correr `nvm use` antes de cualquier comando de npm.
-- **Sin `.env.example`**: no hay variables de entorno. Se crea cuando aparezca la primera.
+- **Una sola variable de entorno, opcional: `SITE_URL`** (ver `.env.example`). Las etiquetas Open
+  Graph necesitan URLs absolutas; `vite/siteUrl.ts` las resuelve al compilar: `SITE_URL`, si no
+  `VERCEL_PROJECT_PRODUCTION_URL` (Vercel la expone sola) y si no localhost. Una `SITE_URL` mal
+  escrita corta el build.
 - **Dirección visual** (plan aprobado con `frontend-design`): el único color de la página es el de
   la ropa; la interfaz es blanco, negro y gris "lona". Tipografía Archivo (una sola familia, el
   ancho variable separa marca y títulos del resto), servida desde `src/assets/fonts` (OFL).
@@ -74,6 +81,21 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. 118 
 - **`<dialog>` nativo** para el carrito y la guía de talles (foco, Escape y fondo inerte gratis).
   jsdom no implementa `showModal()`: se completa en `tests/setup.ts`; el foco y Escape se
   verifican en Chrome.
+- **`noindex` a propósito.** Es una tienda ficticia con precios y checkout: que no aparezca en
+  Google como si vendiera. La preview del link (Open Graph) no depende de eso. Por lo mismo no hay
+  sitemap, datos estructurados ni canonical. Para indexarla, sacar la meta `robots` de `index.html`.
+- **Preview del link:** `public/og.png` (1200×630) reproduce la portada con los mismos trazados y
+  colores. Se generó con un script fuera del repo (Quick Look de macOS): si cambian el título o los
+  colores de la remera clásica, hay que regenerarla.
+- **Zonas táctiles** (pasada con `ui-ux-pro-max`, medidas en Chrome a 390 px): 44 px en controles,
+  links sueltos (`text-action`) y botones de cantidad; nada por debajo de 24 px (WCAG 2.2 AA).
+  Excepción consciente: las muestras de color de las tarjetas miden 28 px, porque ocho de 44 px no
+  entran en una tarjeta de mobile.
+- **Tarjetas de producto y líneas del carrito: un solo link** cuyo `::after` cubre toda la
+  superficie. Las muestras de color, la cantidad y "Quitar" quedan encima con `z-1` (no `z-10`:
+  pisarían el encabezado fijo al scrollear).
+- **Texto de 15 px, campos de 16 px:** con menos de 16 px, Safari de iOS hace zoom al enfocar.
+- **Checkout:** valida cada campo al salir si tiene datos; los obligatorios vacíos se avisan al enviar.
 - **ScrollRestoration con `getKey`:** en cargas iniciales la clave es la URL. Sin eso, abrir una
   URL desde la barra de direcciones heredaba el scroll guardado de otra página (bug real visto en Chrome).
 
@@ -86,11 +108,10 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. 118 
 
 ## Próximos pasos
 
-1. Revisión final con `ui-ux-pro-max` (checklist de UX y accesibilidad) + `seo` (title, meta y
-   Open Graph para la preview del link).
-2. Repo en GitHub (cuenta `tomasgaitan14`, **preguntar público o privado**) y deploy en Vercel
+1. Repo en GitHub (cuenta `tomasgaitan14`, **preguntar público o privado**) y deploy en Vercel
    (cuenta `tomasgaitans-projects`), con el checklist pre-deploy del CLAUDE.md global. Es una SPA:
    Vercel necesita un rewrite de todas las rutas a `index.html` para que los links directos funcionen.
+   `SITE_URL` solo hace falta con un dominio propio.
 
 ## Archivos clave
 
@@ -100,9 +121,12 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. 118 
   (reducer), `cartStorage` (localStorage), `checkout` (validación + pedido), `garmentInk`.
 - `src/context/` — `CartProvider` (estado + persistencia) y `useCart`.
 - `src/components/` y `src/pages/` — interfaz. `src/routes.tsx` define las rutas; `src/paths.ts`, las URLs.
-- `src/index.css` — tokens de diseño, roles tipográficos y utilidades (`button-primary`, `drawer`).
+- `src/index.css` — tokens de diseño, roles tipográficos y utilidades (`button-primary`, `text-action`, `drawer`).
 - `tests/` — Vitest. `tests/ui/` monta la app completa con `tests/support/renderApp.tsx`.
-- `vite.config.ts` — plugins de React y Tailwind + configuración de Vitest (jsdom, `tests/setup.ts`).
+- `vite.config.ts` — plugins de React y Tailwind, completa `%SITE_URL%` en `index.html` y configura
+  Vitest (jsdom, `tests/setup.ts`).
+- `vite/siteUrl.ts` — resuelve la URL pública al compilar (se testea en `tests/siteUrl.test.ts`).
+- `index.html` — title, meta, Open Graph y `noindex`. `public/` — favicon, ícono de iOS, `og.png` y `robots.txt`.
 - `.nvmrc` — Node 24.
 
 ## Notas / contexto extra

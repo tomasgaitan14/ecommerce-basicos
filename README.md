@@ -16,6 +16,11 @@ npm install
 npm run dev
 ```
 
+## Variables de entorno
+
+Una sola, opcional: `SITE_URL`, la URL pública del sitio para la preview del link al compartirlo
+(Open Graph). En Vercel no hace falta, porque sale de `VERCEL_PROJECT_PRODUCTION_URL`. Ver `.env.example`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -39,6 +44,8 @@ Sin backend ni base de datos: el catálogo es estático y el carrito vive en `lo
   carrito lateral, checkout simulado y confirmación del pedido.
 - Las prendas son dibujos SVG planos que se pintan con el color elegido: 14 dibujos para 20 productos.
 - El checkout valida los datos y genera un pedido de prueba. No pide datos de tarjeta.
+- El sitio lleva `noindex`: es una tienda ficticia y no debería aparecer en buscadores.
+  La preview del link al compartirlo funciona igual.
 
 ## Estructura
 
