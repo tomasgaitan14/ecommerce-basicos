@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
 import { Outlet, ScrollRestoration, useLocation, type Location } from 'react-router'
-import { buildPageView, pushToDataLayer } from '../lib/analytics'
+import { useTrackOnce } from '../hooks/useTrackOnce'
+import { buildPageView } from '../lib/analytics'
 import { CartDrawer } from './CartDrawer'
 import { Footer } from './Footer'
 import { Header } from './Header'
@@ -16,18 +16,10 @@ function scrollKey(location: Location): string {
   return location.key === INITIAL_LOCATION_KEY ? location.pathname + location.search : location.key
 }
 
-// Una visita por página. Cambiar el color (?color) o el orden (?orden) no es otra página, y en
-// desarrollo StrictMode corre los efectos dos veces: la página ya contada no se vuelve a contar.
+// Una visita por página: cambiar el color (?color) o el orden (?orden) no es otra página.
 function usePageViewTracking() {
-  const location = useLocation()
-  const trackedPathname = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (trackedPathname.current === location.pathname) return
-    trackedPathname.current = location.pathname
-    // Los efectos corren después de que React puso el <title> de la página nueva.
-    pushToDataLayer(buildPageView(window.location.origin, location.pathname + location.search, document.title))
-  }, [location])
+  const { pathname, search } = useLocation()
+  useTrackOnce(pathname, () => buildPageView(window.location.origin, pathname + search, document.title))
 }
 
 export function Layout() {

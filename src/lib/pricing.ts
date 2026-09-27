@@ -3,7 +3,8 @@ export const SHIPPING_COST = 6900
 export const INSTALLMENTS = 3
 
 const LOCALE = 'es-AR'
-const CURRENCY = 'ARS'
+// También la usa analytics: GA4 necesita la moneda de cada valor.
+export const CURRENCY = 'ARS'
 
 const wholePesos = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: CURRENCY, maximumFractionDigits: 0 })
 const withCents = new Intl.NumberFormat(LOCALE, {

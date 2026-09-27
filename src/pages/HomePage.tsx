@@ -7,6 +7,8 @@ import { CATEGORIES } from '../data/categories'
 import { COLORS } from '../data/colors'
 import { BRAND_FACTS, HERO_PRODUCT_SLUG, PLACARD_SLUGS } from '../data/home'
 import type { Product } from '../data/products'
+import { useTrackOnce } from '../hooks/useTrackOnce'
+import { ITEM_LISTS, buildViewItemList } from '../lib/analytics'
 import { getProductBySlug, getProductsByCategory } from '../lib/catalog'
 import { formatPrice } from '../lib/pricing'
 import { PATHS } from '../paths'
@@ -24,6 +26,7 @@ export function HomePage() {
   const categoriesId = useId()
   const placardId = useId()
   const factsId = useId()
+  useTrackOnce(ITEM_LISTS.placard.item_list_id, () => buildViewItemList(ITEM_LISTS.placard, placard))
 
   return (
     <>
@@ -116,8 +119,8 @@ export function HomePage() {
           </Link>
         </div>
         <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3">
-          {placard.map((product) => (
-            <ProductCard key={product.slug} product={product} />
+          {placard.map((product, index) => (
+            <ProductCard key={product.slug} product={product} list={ITEM_LISTS.placard} index={index} />
           ))}
         </div>
       </section>

@@ -1,8 +1,10 @@
 import { useId, type ChangeEvent } from 'react'
 import { NavLink, useParams, useSearchParams } from 'react-router'
 import { ProductCard } from '../components/ProductCard'
-import { CATEGORIES } from '../data/categories'
+import { CATEGORIES, type Category } from '../data/categories'
 import { PRODUCTS } from '../data/products'
+import { useTrackOnce } from '../hooks/useTrackOnce'
+import { buildViewItemList, catalogList } from '../lib/analytics'
 import {
   DEFAULT_SORT_ORDER,
   SORT_ORDERS,
@@ -21,16 +23,22 @@ const productCount = (count: number) => `${count} ${count === 1 ? 'producto' : '
 
 export function CatalogPage() {
   const { categoria } = useParams()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const sortId = useId()
-
   // Sin parámetro es toda la tienda; con un parámetro que no es categoría, la página no existe.
   const category = categoria === undefined ? null : getCategory(categoria)
   if (category === undefined) return <NotFoundPage />
+  return <Catalog category={category} />
+}
+
+function Catalog({ category }: { category: Category | null }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const sortId = useId()
 
   const order = parseSortOrder(searchParams.get(SORT_PARAM))
   const products = sortProducts(category ? getProductsByCategory(category.slug) : PRODUCTS, order)
   const title = category?.name ?? 'Toda la tienda'
+  const list = catalogList(category)
+  // Una vez por lista: reordenarla no es verla de nuevo, pero otra categoría sí es otra lista.
+  useTrackOnce(list.item_list_id, () => buildViewItemList(list, products))
 
   function changeOrder(event: ChangeEvent<HTMLSelectElement>) {
     const next = parseSortOrder(event.target.value)
@@ -75,9 +83,9 @@ export function CatalogPage() {
       </div>
 
       <ul aria-label="Productos" className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-        {products.map((product) => (
+        {products.map((product, index) => (
           <li key={product.slug}>
-            <ProductCard product={product} />
+            <ProductCard product={product} list={list} index={index} />
           </li>
         ))}
       </ul>

@@ -12,6 +12,8 @@ import { Link, useNavigate } from 'react-router'
 import { OrderSummaryPanel } from '../components/OrderSummaryPanel'
 import { useCart } from '../context/cartContext'
 import { PROVINCES } from '../data/provinces'
+import { useTrackOnce } from '../hooks/useTrackOnce'
+import { ANALYTICS_EVENTS, buildCartEvent, buildPurchase, pushToDataLayer } from '../lib/analytics'
 import {
   PAYMENT_METHODS,
   createOrder,
@@ -57,6 +59,10 @@ export function CheckoutPage() {
   const [values, setValues] = useState(EMPTY_VALUES)
   const [errors, setErrors] = useState<CheckoutErrors>({})
   const formRef = useRef<HTMLFormElement>(null)
+  // Solo con productos: el checkout vacío no es un checkout empezado.
+  useTrackOnce(items.length > 0 ? PATHS.checkout : null, () =>
+    buildCartEvent(ANALYTICS_EVENTS.beginCheckout, items, summary),
+  )
 
   if (items.length === 0) {
     return (
@@ -102,6 +108,8 @@ export function CheckoutPage() {
       return
     }
     const order = createOrder(cart, result.data, { now: () => new Date(), random: Math.random })
+    // Acá y no en la confirmación: esa página se puede recargar y contaría la compra dos veces.
+    pushToDataLayer(buildPurchase(order))
     clear()
     navigate(PATHS.orderConfirmed, { replace: true, state: { order } })
   }

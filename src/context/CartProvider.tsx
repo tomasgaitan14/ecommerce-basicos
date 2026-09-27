@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
-import { EMPTY_CART, cartReducer, describeCart, getAvailableToAdd, getLineId } from '../lib/cart'
+import { ANALYTICS_EVENTS, buildCartEvent, buildCartLineChange, pushToDataLayer } from '../lib/analytics'
+import { EMPTY_CART, cartReducer, describeCart, getAvailableToAdd, getLineId, type CartAction } from '../lib/cart'
 import { loadCart, saveCart } from '../lib/cartStorage'
 import { CartContext, type CartContextValue, type CartVariant } from './cartContext'
 
@@ -32,18 +33,38 @@ export function CartProvider({ children, storage }: CartProviderProps) {
     if (store) saveCart(store, cart)
   }, [store, cart])
 
-  const addItem = useCallback((variant: CartVariant) => {
-    dispatch({ type: 'add', ...variant, quantity: 1 })
-    setLastAddedLineId(getLineId(variant))
-    setIsOpen(true)
-  }, [])
-  const setQuantity = useCallback(
-    (lineId: string, quantity: number) => dispatch({ type: 'setQuantity', lineId, quantity }),
-    [],
+  // Todo cambio de una línea pasa por acá: se aplica y se mide lo que cambió de verdad (el reducer
+  // puede topear por stock).
+  const changeLine = useCallback(
+    (action: CartAction, lineId: string) => {
+      dispatch(action)
+      const event = buildCartLineChange(cart, cartReducer(cart, action), lineId)
+      if (event) pushToDataLayer(event)
+    },
+    [cart],
   )
-  const removeItem = useCallback((lineId: string) => dispatch({ type: 'remove', lineId }), [])
+  const addItem = useCallback(
+    (variant: CartVariant) => {
+      const lineId = getLineId(variant)
+      changeLine({ type: 'add', ...variant, quantity: 1 }, lineId)
+      setLastAddedLineId(lineId)
+      setIsOpen(true)
+    },
+    [changeLine],
+  )
+  const setQuantity = useCallback(
+    (lineId: string, quantity: number) => changeLine({ type: 'setQuantity', lineId, quantity }, lineId),
+    [changeLine],
+  )
+  const removeItem = useCallback((lineId: string) => changeLine({ type: 'remove', lineId }, lineId), [changeLine])
+  // Vaciar el carrito después de comprar no es sacar productos: no se mide.
   const clear = useCallback(() => dispatch({ type: 'clear' }), [])
-  const openCart = useCallback(() => setIsOpen(true), [])
+  // Solo cuando lo abre la persona: el carrito que se abre solo al agregar ya es add_to_cart.
+  const openCart = useCallback(() => {
+    setIsOpen(true)
+    const { items, summary } = describeCart(cart)
+    if (items.length > 0) pushToDataLayer(buildCartEvent(ANALYTICS_EVENTS.viewCart, items, summary))
+  }, [cart])
   const closeCart = useCallback(() => setIsOpen(false), [])
 
   const value = useMemo<CartContextValue>(() => {

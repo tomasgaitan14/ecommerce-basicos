@@ -2,12 +2,20 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { COLORS } from '../data/colors'
 import type { Product } from '../data/products'
+import { buildSelectItem, pushToDataLayer, type ItemList } from '../lib/analytics'
 import { formatPrice } from '../lib/pricing'
 import { PATHS } from '../paths'
 import { ColorSwatches } from './ColorSwatches'
 import { GarmentImage } from './GarmentImage'
 
-export function ProductCard({ product }: { product: Product }) {
+interface ProductCardProps {
+  product: Product
+  // La lista donde aparece la tarjeta y su posición: para medir qué se eligió y desde dónde.
+  list: ItemList
+  index: number
+}
+
+export function ProductCard({ product, list, index }: ProductCardProps) {
   const [colorId, setColorId] = useState(product.colors[0])
   const href = PATHS.product(product.slug, colorId)
 
@@ -20,7 +28,11 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="mt-3 flex items-baseline justify-between gap-3">
         <h3 className="font-medium">
-          <Link to={href} className="underline-offset-4 group-hover:underline after:absolute after:inset-0">
+          <Link
+            to={href}
+            onClick={() => pushToDataLayer(buildSelectItem(list, product, index))}
+            className="underline-offset-4 group-hover:underline after:absolute after:inset-0"
+          >
             {product.name}
           </Link>
         </h3>

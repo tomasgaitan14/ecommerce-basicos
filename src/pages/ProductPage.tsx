@@ -10,6 +10,8 @@ import { useCart } from '../context/cartContext'
 import { COLORS, type ColorId } from '../data/colors'
 import { RETURN_WINDOW_DAYS } from '../data/policies'
 import type { Product } from '../data/products'
+import { useTrackOnce } from '../hooks/useTrackOnce'
+import { ITEM_LISTS, buildViewItem, buildViewItemList } from '../lib/analytics'
 import { getCategory, getProductBySlug, getRelatedProducts, getVariantStock, isLowStock } from '../lib/catalog'
 import { FREE_SHIPPING_THRESHOLD, INSTALLMENTS, formatPrice, getInstallmentAmount } from '../lib/pricing'
 import { COLOR_PARAM, PATHS } from '../paths'
@@ -42,6 +44,11 @@ function ProductDetail({ product }: { product: Product }) {
   const category = getCategory(product.category)
   const stockFor = (candidateSize: string) => getVariantStock(product.slug, colorId, candidateSize)
   const selectedStock = size ? stockFor(size) : 0
+  const related = getRelatedProducts(product)
+
+  // Una vez por ficha, con el color con el que se abrió: cambiarlo después no es otra vista.
+  useTrackOnce(product.slug, () => buildViewItem(product, colorId))
+  useTrackOnce(product.slug, () => buildViewItemList(ITEM_LISTS.related, related))
 
   // El color vive en la URL: se puede compartir el link con el color elegido.
   function selectColor(nextColorId: ColorId) {
@@ -153,8 +160,8 @@ function ProductDetail({ product }: { product: Product }) {
           Combinalo con
         </h2>
         <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
-          {getRelatedProducts(product).map((related) => (
-            <ProductCard key={related.slug} product={related} />
+          {related.map((item, index) => (
+            <ProductCard key={item.slug} product={item} list={ITEM_LISTS.related} index={index} />
           ))}
         </div>
       </section>

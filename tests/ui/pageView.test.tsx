@@ -60,7 +60,7 @@ describe('visitas (page_view)', () => {
     expect(pageViews()).toHaveLength(1)
   })
 
-  it('con StrictMode (desarrollo) la página se cuenta una sola vez', () => {
+  it('con StrictMode (desarrollo) la página y su lista se cuentan una sola vez', () => {
     const router = createMemoryRouter(routes, { initialEntries: ['/'] })
     render(
       <StrictMode>
@@ -70,5 +70,6 @@ describe('visitas (page_view)', () => {
       </StrictMode>,
     )
     expect(pageViews()).toHaveLength(1)
+    expect((window.dataLayer ?? []).filter((entry) => entry.event === 'view_item_list')).toHaveLength(1)
   })
 })
