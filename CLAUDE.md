@@ -40,11 +40,12 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. Buil
 Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 
 Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
-(preview del link). 145 tests en verde (lógica + flujos de UI).
+(preview del link). 177 tests en verde (lógica + flujos de UI).
 
-Analytics en producción desde el 2026-09-27, armado por partes: GTM (`GTM-KQT4NCMT`, versión 2
-publicada) manda a GA4 (`G-L4T9WL46PD`) un `page_view` por página. Verificado en producción y en
-GA4 → Tiempo real. Faltan los eventos de ecommerce y las interacciones (ver Próximos pasos).
+Analytics en producción desde el 2026-09-27, armado por partes: GTM (`GTM-KQT4NCMT`, versión 3
+publicada) manda a GA4 (`G-L4T9WL46PD`) un `page_view` por página y los eventos de ecommerce (listas,
+ficha, carrito, checkout y compra). Probado con la Vista previa y en GA4 → Tiempo real. Faltan las
+interacciones (ver Próximos pasos).
 
 **En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
 Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
@@ -84,18 +85,40 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
   (`?orden`) cambia la URL pero no es otra página. Por eso en GA4 están apagadas las page views
   automáticas por cambios del historial (medición mejorada): si se prenden, se cuentan dobles. En
   desarrollo StrictMode corre los efectos dos veces; una ref evita contar dos veces la misma página.
+- **Eventos de ecommerce, en el formato de GA4:** `src/lib/analytics.ts` arma `view_item_list`,
+  `select_item`, `view_item`, `add_to_cart`, `remove_from_cart`, `view_cart`, `begin_checkout` y
+  `purchase`. Antes de cada uno va `{ ecommerce: null }`: GTM mezcla los objetos del `dataLayer` y
+  un evento heredaría los productos del anterior. Decisiones de Tom:
+  - `purchase` se mide con los pedidos de prueba: GA4 muestra ingresos ficticios, pero el embudo
+    cierra. Sale en el submit del checkout (la confirmación se puede recargar); el valor es el
+    subtotal y el envío va en `shipping`. Del comprador no se manda nada.
+  - Una lista por página: `tienda`, `tienda-<categoría>`, `placard` y `combinalo-con`. Los nombres
+    están fijos en `ITEM_LISTS` y no salen de los títulos: si cambia el texto, los informes no se cortan.
+  - El color va en `item_variant` y el talle en `item_size`, un parámetro propio (dimensión de ítem
+    "Talle" en GA4), para analizarlos por separado.
+  - `view_cart` solo cuando la persona abre el carrito desde el encabezado y tiene productos: el que
+    se abre solo al agregar ya es `add_to_cart`.
+- **Carrito medido en `CartProvider`:** todo cambio de línea pasa por ahí y se mide contra el estado
+  real (el reducer topea por stock). Vaciar el carrito después de comprar no se mide.
+- **`useTrackOnce`** (`src/hooks/`): un evento por página, lista o ficha, también con StrictMode; lo
+  usa el `page_view` del `Layout`. Los eventos de cada página salen antes que su `page_view` (los
+  efectos de los hijos corren antes que los del `Layout`); no afecta los datos, porque cada hit lleva
+  la URL y el título. `CatalogPage` se separó en dos, como la ficha, para que el hook corra antes del 404.
 - **Contenedor GTM:** variable constante `GA4 - ID de medición` (el ID en un solo lugar), variables de
-  capa de datos `DLV - page_location` y `DLV - page_title`, activador `CE - page_view` y etiquetas
-  `GA4 - Etiqueta de Google` (`send_page_view=false`, en Initialization - All Pages) y
-  `GA4 - page_view`. La versión 1 es el contenedor vacío: republicarla es el rollback.
-- **GA4:** zona horaria Argentina, pesos, retención de datos de 14 meses. En la medición mejorada
-  quedan scroll, clics de salida y descargas; las interacciones con formularios están apagadas
-  (contaban como envío cada intento fallido del checkout).
+  capa de datos `DLV - page_location` y `DLV - page_title`, activadores `CE - page_view` y
+  `CE - ecommerce` (regex con los 8 eventos), y etiquetas `GA4 - Etiqueta de Google`
+  (`send_page_view=false`, en Initialization - All Pages), `GA4 - page_view` y `GA4 - ecommerce`
+  (evento `{{Event}}`, datos de ecommerce desde la capa de datos). Versión 3 publicada; republicar la
+  versión anterior es el rollback (la 1 es el contenedor vacío).
+- **GA4:** zona horaria Argentina, pesos, retención de datos de 14 meses y dimensión de ítem "Talle"
+  (`item_size`). En la medición mejorada quedan scroll, clics de salida y descargas; las
+  interacciones con formularios están apagadas (contaban como envío cada intento fallido del checkout).
 - **Probar GTM:** con la Vista previa (Tag Assistant) en Chrome sin bloqueadores. Los bloqueadores de
   trackers (Brave Shields, uBlock) frenan `gtm.js` y `/g/collect`, y Tag Assistant dice "no se ha
   encontrado" aunque el snippet esté bien. Tag Assistant muestra el `page_view` propio como "Cambio
-  en el historial". Los hits se confirman en GA4 (DebugView o Tiempo real): la pestaña de red de la
-  extensión muestra 503 en `/g/collect` aunque lleguen.
+  en el historial", y los `{ ecommerce: null }` como "Mensaje". Los hits se confirman en GA4 → Tiempo
+  real (DebugView a veces tarda en mostrar el dispositivo): la pestaña de red de la extensión muestra
+  503 en `/g/collect` aunque lleguen.
 - **Dirección visual** (plan aprobado con `frontend-design`): el único color de la página es el de
   la ropa; la interfaz es blanco, negro y gris "lona". Tipografía Archivo (una sola familia, el
   ancho variable separa marca y títulos del resto), servida desde `src/assets/fonts` (OFL).
@@ -147,11 +170,8 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
 
 Analytics, por partes y con el OK de Tom en cada una:
 
-1. Eventos de ecommerce de GA4: listas, ficha, carrito, checkout y compra. Antes, decidir si se mide
-   `purchase` con los pedidos de prueba y cómo se nombran las listas (catálogo, "Un placard
-   resuelto", "Combinalo con").
-2. Interacciones: color, guía de talles, orden del catálogo y errores al agregar o en el checkout.
-3. Plan de medición documentado y export del contenedor al repo.
+1. Interacciones: color, guía de talles, orden del catálogo y errores al agregar o en el checkout.
+2. Plan de medición documentado y export del contenedor al repo.
 
 Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview del link use ese dominio.
 
@@ -161,11 +181,13 @@ Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview d
   talles, provincias y contenido de la portada. Los tests de integridad viven en `tests/catalog.test.ts`.
 - `src/lib/` — lógica pura: `catalog`, `pricing` (envío gratis desde $150.000, 3 cuotas), `cart`
   (reducer), `cartStorage` (localStorage), `checkout` (validación + pedido), `garmentInk`,
-  `analytics` (eventos para el `dataLayer` de GTM).
-- `src/context/` — `CartProvider` (estado + persistencia) y `useCart`.
+  `analytics` (eventos para el `dataLayer` de GTM: `page_view` y ecommerce de GA4).
+- `src/context/` — `CartProvider` (estado + persistencia + eventos del carrito) y `useCart`.
+- `src/hooks/useTrackOnce.ts` — manda un evento una vez por página, lista o ficha.
 - `src/components/` y `src/pages/` — interfaz. `src/routes.tsx` define las rutas; `src/paths.ts`, las URLs.
 - `src/index.css` — tokens de diseño, roles tipográficos y utilidades (`button-primary`, `text-action`, `drawer`).
-- `tests/` — Vitest. `tests/ui/` monta la app completa con `tests/support/renderApp.tsx`.
+- `tests/` — Vitest. `tests/ui/` monta la app completa con `tests/support/renderApp.tsx`; los
+  carritos guardados y el formulario de checkout de prueba están en `tests/support/`.
 - `vite.config.ts` — plugins de React y Tailwind, completa `%SITE_URL%` en `index.html`, inyecta GTM
   si hay `GTM_ID` y configura Vitest (jsdom, `tests/setup.ts`).
 - `vite/siteUrl.ts` — resuelve la URL pública al compilar (se testea en `tests/siteUrl.test.ts`).
