@@ -1,10 +1,10 @@
+import type { BuildEnv } from './buildEnv.ts'
+
 // URL pública del sitio, para las etiquetas Open Graph de index.html: los crawlers de LinkedIn o
 // WhatsApp solo aceptan URLs absolutas. Se resuelve al compilar.
 export const LOCAL_SITE_URL = 'http://localhost:5173'
 
 const ABSOLUTE_HTTP_URL = /^https?:\/\/[^\s/]+/
-
-type BuildEnv = Record<string, string | undefined>
 
 export function resolveSiteUrl(env: BuildEnv): string {
   const explicit = env.SITE_URL?.trim()
