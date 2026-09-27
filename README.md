@@ -46,7 +46,6 @@ Sin backend ni base de datos: el catálogo es estático y el carrito vive en `lo
   carrito lateral, checkout simulado y confirmación del pedido.
 - Las prendas son dibujos SVG planos que se pintan con el color elegido: 14 dibujos para 20 productos.
 - El checkout valida los datos y genera un pedido de prueba. No pide datos de tarjeta.
-- Google Tag Manager se carga solo en el deploy de producción; ni local ni las previews mandan datos.
 - El sitio lleva `noindex`: es una tienda ficticia y no debería aparecer en buscadores.
   La preview del link al compartirlo funciona igual.
 
