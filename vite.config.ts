@@ -2,6 +2,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { GTM_CONTAINER_ID, gtmTags, shouldLoadGtm } from './vite/gtm.ts'
 import { resolveSiteUrl } from './vite/siteUrl.ts'
 
 const SITE_URL_PLACEHOLDER = '%SITE_URL%'
@@ -17,13 +18,21 @@ function siteUrlPlugin(siteUrl: string): Plugin {
   }
 }
 
+// Google Tag Manager, solo en el deploy de producción (ver vite/gtm.ts).
+function gtmPlugin(enabled: boolean): Plugin {
+  return {
+    name: 'basicos:gtm',
+    transformIndexHtml: () => (enabled ? gtmTags(GTM_CONTAINER_ID) : []),
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // Prefijo vacío: lee SITE_URL y las variables de sistema de Vercel. Esto queda en la config;
   // al navegador solo llegan las variables VITE_*, como siempre.
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), tailwindcss(), siteUrlPlugin(resolveSiteUrl(env))],
+    plugins: [react(), tailwindcss(), siteUrlPlugin(resolveSiteUrl(env)), gtmPlugin(shouldLoadGtm(env))],
     test: {
       environment: 'jsdom',
       include: ['tests/**/*.test.{ts,tsx}'],

@@ -39,7 +39,7 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. Buil
 Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 
 Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
-(preview del link). 129 tests en verde (lógica + flujos de UI).
+(preview del link). 135 tests en verde (lógica + flujos de UI), sumando Google Tag Manager.
 
 **En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
 Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
@@ -103,6 +103,12 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
   la CLI (`vercel project add`) sin preset y buscaba `build`: el primer deploy falló por eso.
   También hace el rewrite de la SPA a `index.html`, suma `nosniff` y `Referrer-Policy`, y da caché
   inmutable a `/assets` (los nombres llevan hash). Node 24 queda fijado con `engines` en `package.json`.
+- **Google Tag Manager (`GTM-5FZ7G4WN`) solo en producción:** `vite/gtm.ts` inyecta el snippet
+  oficial al compilar cuando `VERCEL_ENV=production`. Local y previews no lo cargan, para no
+  mezclar visitas de prueba con las reales; se prueba con Tag Assistant sobre el sitio en vivo.
+  Solo el contenedor, sin eventos de e-commerce en el `dataLayer` (decisión de Tom, se pueden sumar
+  después). La app no recarga entre páginas: para contar visitas por ruta, en GA4 usar la medición
+  mejorada de cambios de historial o el activador "History Change" de GTM.
 - **ScrollRestoration con `getKey`:** en cargas iniciales la clave es la URL. Sin eso, abrir una
   URL desde la barra de direcciones heredaba el scroll guardado de otra página (bug real visto en Chrome).
 
@@ -131,6 +137,7 @@ para que la preview del link use ese dominio.
 - `vite.config.ts` — plugins de React y Tailwind, completa `%SITE_URL%` en `index.html` y configura
   Vitest (jsdom, `tests/setup.ts`).
 - `vite/siteUrl.ts` — resuelve la URL pública al compilar (se testea en `tests/siteUrl.test.ts`).
+- `vite/gtm.ts` — snippet de Google Tag Manager, solo en producción (se testea en `tests/gtm.test.ts`).
 - `vercel.json` — build, rewrite de la SPA y headers para Vercel.
 - `index.html` — title, meta, Open Graph y `noindex`. `public/` — favicon, ícono de iOS, `og.png` y `robots.txt`.
 - `.nvmrc` — Node 24.
