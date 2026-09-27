@@ -34,8 +34,11 @@ Ninguno. No tiene backend, flujos de n8n ni base de datos.
 
 ## Estado actual
 
-Scaffold listo (Vite + Tailwind + Vitest + oxlint). Build y lint pasan. `src/App.tsx` todavía
-es un placeholder.
+Tienda completa y funcionando en local (2026-09-27): portada, catálogo por categoría con orden,
+ficha de producto, carrito lateral, checkout simulado, confirmación y 404. 118 tests en verde
+(lógica + flujos de UI), build y lint limpios. Revisada en Chrome en escritorio y a 390 px.
+
+**Sin deploy y sin remoto de git todavía.** Commits locales: scaffold, lógica, UI y docs. El repo usa la identidad personal con el mail noreply de GitHub, no la global de trabajo.
 
 ## Decisiones tomadas
 
@@ -56,6 +59,23 @@ es un placeholder.
 - **Node 24 solo en este proyecto.** El `default` de nvm quedó en 22.11.0 para no afectar a los
   otros proyectos. Correr `nvm use` antes de cualquier comando de npm.
 - **Sin `.env.example`**: no hay variables de entorno. Se crea cuando aparezca la primera.
+- **Dirección visual** (plan aprobado con `frontend-design`): el único color de la página es el de
+  la ropa; la interfaz es blanco, negro y gris "lona". Tipografía Archivo (una sola familia, el
+  ancho variable separa marca y títulos del resto), servida desde `src/assets/fonts` (OFL).
+  Tailwind solo expone los tokens de marca (`--color-*: initial` en `index.css`).
+- **Portada:** la remera clásica en sus 8 colores. El título se escala con container queries
+  (`12cqi`): "Todo combina." mide 8,06 em, medido en Chrome, y así entra en dos líneas en cualquier ancho.
+- **Dibujos:** 14 geometrales en `src/data/garments.ts` (varios productos comparten dibujo). Las
+  líneas se adaptan al color de la prenda (`lib/garmentInk.ts`); el gris melange lleva textura.
+- **Color destacado** = primer color de cada producto, alternado a propósito para que la grilla
+  no sea toda negra. La remera clásica mantiene su orden porque es el de la franja de portada.
+- **Stock:** 12 unidades por variante salvo excepciones cargadas a mano (agotados y últimas
+  unidades para mostrar esos estados). Una excepción con clave mal escrita corta la carga.
+- **`<dialog>` nativo** para el carrito y la guía de talles (foco, Escape y fondo inerte gratis).
+  jsdom no implementa `showModal()`: se completa en `tests/setup.ts`; el foco y Escape se
+  verifican en Chrome.
+- **ScrollRestoration con `getKey`:** en cargas iniciales la clave es la URL. Sin eso, abrir una
+  URL desde la barra de direcciones heredaba el scroll guardado de otra página (bug real visto en Chrome).
 
 ## Skills
 
@@ -66,19 +86,24 @@ es un placeholder.
 
 ## Próximos pasos
 
-1. Plan de diseño con `frontend-design` (paleta, tipografía, layout) → aprobación de Tom.
-2. Lógica con TDD: catálogo, precios y envío, carrito, validación del checkout.
-3. Componentes y páginas: home, catálogo, producto, carrito, 404.
-4. Checkout simulado + confirmación.
-5. Revisión final con `ui-ux-pro-max` + `seo`.
-6. Repo en GitHub (cuenta `tomasgaitan14`, **preguntar público o privado**) y deploy en Vercel
-   (cuenta `tomasgaitans-projects`), con el checklist pre-deploy del CLAUDE.md global.
+1. Revisión final con `ui-ux-pro-max` (checklist de UX y accesibilidad) + `seo` (title, meta y
+   Open Graph para la preview del link).
+2. Repo en GitHub (cuenta `tomasgaitan14`, **preguntar público o privado**) y deploy en Vercel
+   (cuenta `tomasgaitans-projects`), con el checklist pre-deploy del CLAUDE.md global. Es una SPA:
+   Vercel necesita un rewrite de todas las rutas a `index.html` para que los links directos funcionen.
 
 ## Archivos clave
 
-- `vite.config.ts` — plugins de React y Tailwind + configuración de Vitest (jsdom, `tests/`).
+- `src/data/` — catálogo (`products.ts`), colores, categorías, dibujos (`garments.ts`), guías de
+  talles, provincias y contenido de la portada. Los tests de integridad viven en `tests/catalog.test.ts`.
+- `src/lib/` — lógica pura: `catalog`, `pricing` (envío gratis desde $150.000, 3 cuotas), `cart`
+  (reducer), `cartStorage` (localStorage), `checkout` (validación + pedido), `garmentInk`.
+- `src/context/` — `CartProvider` (estado + persistencia) y `useCart`.
+- `src/components/` y `src/pages/` — interfaz. `src/routes.tsx` define las rutas; `src/paths.ts`, las URLs.
+- `src/index.css` — tokens de diseño, roles tipográficos y utilidades (`button-primary`, `drawer`).
+- `tests/` — Vitest. `tests/ui/` monta la app completa con `tests/support/renderApp.tsx`.
+- `vite.config.ts` — plugins de React y Tailwind + configuración de Vitest (jsdom, `tests/setup.ts`).
 - `.nvmrc` — Node 24.
-- `src/main.tsx` — punto de entrada.
 
 ## Notas / contexto extra
 
