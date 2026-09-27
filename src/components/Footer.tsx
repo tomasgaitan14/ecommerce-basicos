@@ -16,10 +16,10 @@ export function Footer() {
         </div>
         <nav aria-label="Tienda">
           <h2 className="text-sm font-medium">Tienda</h2>
-          <ul className="mt-3 grid gap-1.5 text-sm text-muted">
+          <ul className="mt-2 grid text-sm text-muted">
             {CATEGORIES.map((category) => (
               <li key={category.slug}>
-                <Link to={PATHS.category(category.slug)} className="hover:text-ink hover:underline">
+                <Link to={PATHS.category(category.slug)} className="inline-block py-3 hover:text-ink hover:underline md:py-1">
                   {category.name}
                 </Link>
               </li>

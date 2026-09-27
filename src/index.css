@@ -24,7 +24,7 @@
   --color-rule: #d8d7d2;
   /* Borde de campos y talles. 3,5:1 sobre blanco, el mínimo para controles. */
   --color-control: #8a8984;
-  /* Errores. 6,2:1 sobre blanco. */
+  /* Errores. 6,6:1 sobre blanco. */
   --color-alert: #b42318;
 
   --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
@@ -74,6 +74,12 @@
     @apply bg-paper font-sans text-base text-ink antialiased;
   }
 
+  /* Tailwind v4 deja el cursor por defecto en los botones: la mano indica que se pueden tocar. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
@@ -105,10 +111,20 @@
   font-size: var(--text-sm);
   font-weight: 500;
   text-align: center;
+  transition: background-color 150ms ease;
 
   &:hover {
     background: color-mix(in srgb, var(--color-ink) 82%, var(--color-paper));
   }
+}
+
+/* Link o botón de texto suelto: subrayado y con 44 px de alto para el dedo (WCAG 2.5.5). */
+@utility text-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
 }
 
 /* Panel lateral del carrito: entra desde la derecha como respuesta a "Agregar". */

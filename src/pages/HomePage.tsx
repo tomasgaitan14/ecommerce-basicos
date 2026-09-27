@@ -69,7 +69,7 @@ export function HomePage() {
         <p className="tabular-nums">
           {hero.name}. {hero.summary}. {formatPrice(hero.price)}
         </p>
-        <Link to={PATHS.product(hero.slug)} className="underline underline-offset-4">
+        <Link to={PATHS.product(hero.slug)} className="text-action -my-3">
           Elegir talle
         </Link>
       </div>
@@ -111,7 +111,7 @@ export function HomePage() {
             </h2>
             <p className="mt-2 max-w-[48ch] text-muted">Seis prendas que combinan entre sí y cubren la semana.</p>
           </div>
-          <Link to={PATHS.shop} className="text-sm underline underline-offset-4">
+          <Link to={PATHS.shop} className="text-action text-sm">
             Ver toda la tienda
           </Link>
         </div>

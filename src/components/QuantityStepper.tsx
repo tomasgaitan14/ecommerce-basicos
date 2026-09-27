@@ -10,7 +10,7 @@ const MIN_QUANTITY = 1
 
 export function QuantityStepper({ value, max, onChange, itemName }: QuantityStepperProps) {
   const buttonClass =
-    'flex size-9 items-center justify-center text-base disabled:cursor-not-allowed disabled:text-control'
+    'flex size-11 items-center justify-center text-base disabled:cursor-not-allowed disabled:text-control'
   return (
     <div role="group" aria-label={`Cantidad de ${itemName}`} className="inline-flex items-center border border-control">
       <button

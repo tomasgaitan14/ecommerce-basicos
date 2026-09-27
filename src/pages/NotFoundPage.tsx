@@ -13,7 +13,7 @@ export function NotFoundPage() {
         <Link to={PATHS.shop} className="button-primary">
           Ver la tienda
         </Link>
-        <Link to={PATHS.home} className="text-sm underline underline-offset-4">
+        <Link to={PATHS.home} className="text-action text-sm">
           Ir al inicio
         </Link>
       </div>

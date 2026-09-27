@@ -83,16 +83,16 @@ function ProductDetail({ product }: { product: Product }) {
         </div>
         <div>
           <nav aria-label="Ruta de navegación">
-            <ol className="flex flex-wrap gap-1.5 text-xs text-muted">
+            <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
               <li>
-                <Link to={PATHS.shop} className="hover:text-ink hover:underline">
+                <Link to={PATHS.shop} className="inline-block py-1.5 hover:text-ink hover:underline">
                   Tienda
                 </Link>
                 <span aria-hidden="true"> /</span>
               </li>
               {category && (
                 <li>
-                  <Link to={PATHS.category(category.slug)} className="hover:text-ink hover:underline">
+                  <Link to={PATHS.category(category.slug)} className="inline-block py-1.5 hover:text-ink hover:underline">
                     {category.name}
                   </Link>
                   <span aria-hidden="true"> /</span>

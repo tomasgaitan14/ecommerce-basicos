@@ -13,7 +13,7 @@ export function SizeGuideDialog({ guideId }: { guideId: SizeGuideId }) {
         type="button"
         aria-haspopup="dialog"
         onClick={() => dialogRef.current?.showModal()}
-        className="text-sm underline underline-offset-4"
+        className="text-action -my-3 text-sm"
       >
         Guía de talles
       </button>
@@ -31,7 +31,7 @@ export function SizeGuideDialog({ guideId }: { guideId: SizeGuideId }) {
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              className="text-sm underline underline-offset-4"
+              className="text-action -mt-2 -mr-2 px-2 text-sm"
             >
               Cerrar
             </button>

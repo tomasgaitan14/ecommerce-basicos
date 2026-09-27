@@ -57,6 +57,22 @@ describe('checkout', () => {
     expect(screen.getByLabelText('Email')).toHaveFocus()
   })
 
+  it('al salir de un campo con un dato mal escrito muestra el error enseguida', async () => {
+    const { user } = renderApp('/checkout', storageWithCart())
+    await user.type(screen.getByLabelText('Email'), 'lucas@')
+    await user.tab()
+    expect(screen.getByLabelText('Email')).toHaveAccessibleDescription(
+      'Revisá el email: tiene que ser como nombre@dominio.com.',
+    )
+  })
+
+  it('pasar por un campo sin escribir no lo marca: los obligatorios se avisan al enviar', async () => {
+    const { user } = renderApp('/checkout', storageWithCart())
+    await user.click(screen.getByLabelText('Email'))
+    await user.tab()
+    expect(screen.getByLabelText('Email')).not.toHaveAttribute('aria-invalid')
+  })
+
   it('un pedido válido lleva a la confirmación y vacía el carrito', async () => {
     const { user } = renderApp('/checkout', storageWithCart())
     await fillValidForm(user)

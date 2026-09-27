@@ -12,6 +12,7 @@ import { QuantityStepper } from './QuantityStepper'
 export function CartDrawer() {
   const { isOpen, closeCart, items, summary, setQuantity, removeItem, lastAdded } = useCart()
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
 
   // El estado vive en el contexto; el <dialog> nativo se sincroniza con él.
@@ -36,10 +37,11 @@ export function CartDrawer() {
             Carrito ({summary.itemCount})
           </h2>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={closeCart}
             aria-label="Cerrar carrito"
-            className="text-sm underline underline-offset-4"
+            className="text-action -mr-2 px-2 text-sm"
           >
             Cerrar
           </button>
@@ -63,7 +65,11 @@ export function CartDrawer() {
                   key={item.lineId}
                   item={item}
                   onQuantityChange={(quantity) => setQuantity(item.lineId, quantity)}
-                  onRemove={() => removeItem(item.lineId)}
+                  onRemove={() => {
+                    removeItem(item.lineId)
+                    // El botón "Quitar" desaparece con la línea: el foco no puede quedar en el aire.
+                    closeButtonRef.current?.focus()
+                  }}
                   onNavigate={closeCart}
                 />
               ))}
@@ -113,20 +119,25 @@ interface CartLineProps {
 function CartLine({ item, onQuantityChange, onRemove, onNavigate }: CartLineProps) {
   const href = PATHS.product(item.productSlug, item.colorId)
   return (
-    <li className="grid grid-cols-[4.5rem_1fr_auto] gap-4 border-b border-rule py-4 last:border-b-0">
-      <Link to={href} onClick={onNavigate} tabIndex={-1} aria-hidden="true" className="block aspect-[4/5] bg-canvas p-1.5">
+    // Como en las tarjetas: el link del nombre cubre la línea; cantidad y "Quitar" quedan por encima.
+    <li className="group relative grid grid-cols-[4.5rem_1fr_auto] gap-4 border-b border-rule py-4 last:border-b-0">
+      <div className="aspect-[4/5] bg-canvas p-1.5">
         <GarmentImage garment={item.garment} color={COLORS[item.colorId]} className="size-full" />
-      </Link>
+      </div>
       <div className="min-w-0">
         <p className="font-medium">
-          <Link to={href} onClick={onNavigate} className="underline-offset-4 hover:underline">
+          <Link
+            to={href}
+            onClick={onNavigate}
+            className="underline-offset-4 group-hover:underline after:absolute after:inset-0"
+          >
             {item.name}
           </Link>
         </p>
         <p className="text-xs text-muted">
           {item.colorName}, talle {item.size}
         </p>
-        <div className="mt-3">
+        <div className="relative z-1 mt-3 w-fit">
           <QuantityStepper
             value={item.quantity}
             max={item.maxQuantity}
@@ -141,7 +152,7 @@ function CartLine({ item, onQuantityChange, onRemove, onNavigate }: CartLineProp
           type="button"
           onClick={onRemove}
           aria-label={`Quitar ${item.name}, ${item.colorName}, talle ${item.size}`}
-          className="text-xs text-muted underline underline-offset-4 hover:text-ink"
+          className="text-action relative z-1 -mr-2 -mb-3 px-2 text-xs text-muted hover:text-ink"
         >
           Quitar
         </button>

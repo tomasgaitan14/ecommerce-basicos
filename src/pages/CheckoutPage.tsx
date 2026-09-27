@@ -1,4 +1,12 @@
-import { useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
+import {
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useNavigate } from 'react-router'
 import { OrderSummaryPanel } from '../components/OrderSummaryPanel'
@@ -71,6 +79,17 @@ export function CheckoutPage() {
     }
   }
 
+  // Al salir de un campo con datos, su error aparece enseguida. Pasar de largo por uno vacío no
+  // es un error: los obligatorios se avisan recién al enviar.
+  function validateOnBlur(field: CheckoutField) {
+    return () => {
+      if (values[field].trim() === '') return
+      const result = validateCheckout(values)
+      const error = result.ok ? undefined : result.errors[field]
+      setErrors(({ [field]: _previous, ...rest }) => (error ? { ...rest, [field]: error } : rest))
+    }
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const result = validateCheckout(values)
@@ -91,6 +110,7 @@ export function CheckoutPage() {
     name: field,
     value: values[field],
     onChange: change(field),
+    onBlur: validateOnBlur(field),
     error: errors[field],
   })
 
@@ -101,7 +121,7 @@ export function CheckoutPage() {
       <div className="mt-8 grid gap-10 md:grid-cols-12 md:gap-x-10">
         <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid gap-10 md:col-span-7">
           <FormSection title="Contacto">
-            <TextField label="Email" type="email" autoComplete="email" {...fieldProps('email')} />
+            <TextField label="Email" type="email" autoComplete="email" spellCheck={false} {...fieldProps('email')} />
           </FormSection>
 
           <FormSection title="Envío">
@@ -120,7 +140,12 @@ export function CheckoutPage() {
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <TextField label="Localidad" autoComplete="address-level2" {...fieldProps('city')} />
-              <TextField label="Código postal" autoComplete="postal-code" {...fieldProps('postalCode')} />
+              <TextField
+                label="Código postal"
+                autoComplete="postal-code"
+                autoCapitalize="characters"
+                {...fieldProps('postalCode')}
+              />
             </div>
             <SelectField label="Provincia" autoComplete="address-level1" {...fieldProps('province')}>
               <option value="">Elegí una provincia</option>
@@ -184,12 +209,14 @@ interface FieldProps {
   name: CheckoutField
   value: string
   onChange: (event: ChangeEvent<FieldElement>) => void
+  onBlur: () => void
   error?: string
   autoComplete: string
 }
 
+// 16 px: con menos, Safari de iOS hace zoom al enfocar el campo.
 const CONTROL_CLASS =
-  'mt-1.5 w-full border border-control bg-paper px-3 py-2.5 text-base aria-invalid:border-alert'
+  'mt-1.5 min-h-11 w-full border border-control bg-paper px-3 py-2.5 text-[1rem] aria-invalid:border-alert'
 
 function useFieldIds(error?: string) {
   const id = useId()
@@ -206,7 +233,9 @@ function FieldError({ id, error }: { id: string; error?: string }) {
   )
 }
 
-function TextField({ label, error, type = 'text', ...inputProps }: FieldProps & { type?: string }) {
+type TextFieldProps = FieldProps & Pick<InputHTMLAttributes<HTMLInputElement>, 'type' | 'spellCheck' | 'autoCapitalize'>
+
+function TextField({ label, error, type = 'text', ...inputProps }: TextFieldProps) {
   const { id, errorId, describedBy } = useFieldIds(error)
   return (
     <div>
