@@ -1,5 +1,7 @@
 # basicos
 
+**En vivo:** https://tiendabasicosecommerce.vercel.app
+
 E-commerce de ropa básica para hombre, con estética minimalista. Proyecto de portfolio: recorre
 el flujo completo de una tienda (catálogo, producto, carrito, checkout y confirmación) sin
 procesar pagos reales.
@@ -58,5 +60,10 @@ src/
   pages/       una por ruta
 tests/         lógica en la raíz, flujos de la interfaz en tests/ui
 ```
+
+## Deploy
+
+Vercel, conectado a este repo: cada push a `main` deploya a producción. La configuración está en
+`vercel.json`.
 
 La tipografía es [Archivo](https://github.com/Omnibus-Type/Archivo), con licencia SIL Open Font License.

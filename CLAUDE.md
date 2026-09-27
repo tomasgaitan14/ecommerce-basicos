@@ -24,7 +24,7 @@ Personal (portfolio).
 | Tests | Vitest + Testing Library + jsdom, en `tests/` |
 | Lint | oxlint |
 | Node | 24 LTS, fijado en `.nvmrc` |
-| Deploy | **Todavía ninguno.** Vercel como sitio estático cuando esté listo |
+| Deploy | Vercel, proyecto `tiendabasicosecommerce` en el equipo `tomasg-projects`, conectado a GitHub: cada push a `main` deploya |
 
 Dependencias de runtime: solo `react`, `react-dom` y `react-router`.
 
@@ -34,15 +34,15 @@ Ninguno. No tiene backend, flujos de n8n ni base de datos.
 
 ## Estado actual
 
-Tienda completa y funcionando en local (2026-09-27): portada, catálogo por categoría con orden,
+Tienda completa (2026-09-27): portada, catálogo por categoría con orden,
 ficha de producto, carrito lateral, checkout simulado, confirmación y 404. Build y lint limpios.
 Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 
 Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
 (preview del link). 129 tests en verde (lógica + flujos de UI).
 
-**Sin deploy y sin remoto de git todavía.** Todo está commiteado en local (scaffold, lógica, UI,
-pasada final y docs). El repo usa la identidad personal con el mail noreply de GitHub, no la global de trabajo.
+**En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
+Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
 
 ## Decisiones tomadas
 
@@ -96,6 +96,13 @@ pasada final y docs). El repo usa la identidad personal con el mail noreply de G
   pisarían el encabezado fijo al scrollear).
 - **Texto de 15 px, campos de 16 px:** con menos de 16 px, Safari de iOS hace zoom al enfocar.
 - **Checkout:** valida cada campo al salir si tiene datos; los obligatorios vacíos se avisan al enviar.
+- **Repo público con el mail `noreply` de GitHub** (`54362598+tomasgaitan14@users.noreply.github.com`,
+  configurado en este repo). Antes del primer push se reescribió el historial para que no quedara el
+  mail personal en ningún commit; los mails de prueba usan `@example.com`, dominio reservado.
+- **`vercel.json` explícito:** framework, comando de build y carpeta `dist`. El proyecto se creó con
+  la CLI (`vercel project add`) sin preset y buscaba `build`: el primer deploy falló por eso.
+  También hace el rewrite de la SPA a `index.html`, suma `nosniff` y `Referrer-Policy`, y da caché
+  inmutable a `/assets` (los nombres llevan hash). Node 24 queda fijado con `engines` en `package.json`.
 - **ScrollRestoration con `getKey`:** en cargas iniciales la clave es la URL. Sin eso, abrir una
   URL desde la barra de direcciones heredaba el scroll guardado de otra página (bug real visto en Chrome).
 
@@ -108,10 +115,8 @@ pasada final y docs). El repo usa la identidad personal con el mail noreply de G
 
 ## Próximos pasos
 
-1. Repo en GitHub (cuenta `tomasgaitan14`, **preguntar público o privado**) y deploy en Vercel
-   (cuenta `tomasgaitans-projects`), con el checklist pre-deploy del CLAUDE.md global. Es una SPA:
-   Vercel necesita un rewrite de todas las rutas a `index.html` para que los links directos funcionen.
-   `SITE_URL` solo hace falta con un dominio propio.
+Nada pendiente del alcance acordado. Si se suma un dominio propio, definir `SITE_URL` en Vercel
+para que la preview del link use ese dominio.
 
 ## Archivos clave
 
@@ -126,6 +131,7 @@ pasada final y docs). El repo usa la identidad personal con el mail noreply de G
 - `vite.config.ts` — plugins de React y Tailwind, completa `%SITE_URL%` en `index.html` y configura
   Vitest (jsdom, `tests/setup.ts`).
 - `vite/siteUrl.ts` — resuelve la URL pública al compilar (se testea en `tests/siteUrl.test.ts`).
+- `vercel.json` — build, rewrite de la SPA y headers para Vercel.
 - `index.html` — title, meta, Open Graph y `noindex`. `public/` — favicon, ícono de iOS, `og.png` y `robots.txt`.
 - `.nvmrc` — Node 24.
 
