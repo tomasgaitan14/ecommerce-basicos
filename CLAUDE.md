@@ -21,6 +21,7 @@ Personal (portfolio).
 | Rutas | React Router 8 en modo data (`createBrowserRouter`), por `ScrollRestoration` |
 | Estado | Carrito con Context + `useReducer`, persistido en `localStorage` |
 | Datos | Catálogo estático tipado en `src/data/`. Sin backend ni DB |
+| Analytics | Google Tag Manager → GA4. La app solo deja eventos en el `dataLayer`; etiquetas y destino se configuran en el contenedor |
 | Tests | Vitest + Testing Library + jsdom, en `tests/` |
 | Lint | oxlint |
 | Node | 24 LTS, fijado en `.nvmrc` |
@@ -39,7 +40,11 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. Buil
 Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 
 Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
-(preview del link). 129 tests en verde (lógica + flujos de UI).
+(preview del link). 145 tests en verde (lógica + flujos de UI).
+
+Analytics en curso (2026-09-27), por partes: GTM se carga desde el build con `GTM_ID` y la app deja
+un `page_view` por página en el `dataLayer`. Falta configurar el contenedor y cargar `GTM_ID` en
+Vercel (ver Próximos pasos).
 
 **En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
 Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
@@ -62,10 +67,23 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
   al catálogo en la misma posición de scroll es parte de la experiencia de compra.
 - **Node 24 solo en este proyecto.** El `default` de nvm quedó en 22.11.0 para no afectar a los
   otros proyectos. Correr `nvm use` antes de cualquier comando de npm.
-- **Una sola variable de entorno, opcional: `SITE_URL`** (ver `.env.example`). Las etiquetas Open
-  Graph necesitan URLs absolutas; `vite/siteUrl.ts` las resuelve al compilar: `SITE_URL`, si no
-  `VERCEL_PROJECT_PRODUCTION_URL` (Vercel la expone sola) y si no localhost. Una `SITE_URL` mal
-  escrita corta el build.
+- **Dos variables de entorno, las dos opcionales** (ver `.env.example`):
+  - `SITE_URL`: las etiquetas Open Graph necesitan URLs absolutas; `vite/siteUrl.ts` las resuelve al
+    compilar: `SITE_URL`, si no `VERCEL_PROJECT_PRODUCTION_URL` (Vercel la expone sola) y si no
+    localhost. Una `SITE_URL` mal escrita corta el build.
+  - `GTM_ID`: sin ella no se carga GTM, así local, las previews y los tests no mandan datos. En Vercel
+    va solo en Production; para probar GTM en local, en `.env.local`. `vite/gtm.ts` la valida (un ID
+    de GA4 pegado por error corta el build) e inyecta el snippet al principio del `<head>`, sin el
+    `<noscript>`: la tienda no funciona sin JavaScript.
+- **Analytics: GTM → GA4, armado por partes.** Contenedor `GTM-KQT4NCMT`; la etiqueta de GA4
+  (`G-L4T9WL46PD`) y qué se manda viven en el contenedor, no en el código. La app solo deja eventos en
+  el `dataLayer` (`src/lib/analytics.ts`). Un primer intento (ID fijo en el código, solo el
+  contenedor) se borró a propósito, con sus cuentas, para rehacerlo desde cero (revert `3a49b75`).
+- **`page_view` propio, uno por página** (`Layout`): cambiar el color (`?color`) o el orden
+  (`?orden`) cambia la URL pero no es otra página. Por eso, cuando el contenedor mande este evento,
+  en GA4 hay que apagar las page views automáticas por cambios del historial (medición mejorada): si
+  no, se cuentan dobles. En desarrollo StrictMode corre los efectos dos veces; una ref evita contar
+  dos veces la misma página.
 - **Dirección visual** (plan aprobado con `frontend-design`): el único color de la página es el de
   la ropa; la interfaz es blanco, negro y gris "lona". Tipografía Archivo (una sola familia, el
   ancho variable separa marca y títulos del resto), servida desde `src/assets/fonts` (OFL).
@@ -115,22 +133,32 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
 
 ## Próximos pasos
 
-Nada pendiente del alcance acordado. Si se suma un dominio propio, definir `SITE_URL` en Vercel
-para que la preview del link use ese dominio.
+Analytics, por partes y con el OK de Tom en cada una:
+
+1. Contenedor: etiqueta de Google (`G-L4T9WL46PD`, sin page view automático) y etiqueta del
+   `page_view`. Probar con la Vista previa de GTM en local, publicar, cargar `GTM_ID` en Vercel
+   (Production) y apagar en GA4 las page views por cambios del historial.
+2. Eventos de ecommerce de GA4: listas, ficha, carrito, checkout y compra.
+3. Interacciones: color, guía de talles, orden del catálogo y errores al agregar o en el checkout.
+4. Plan de medición documentado y export del contenedor al repo.
+
+Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview del link use ese dominio.
 
 ## Archivos clave
 
 - `src/data/` — catálogo (`products.ts`), colores, categorías, dibujos (`garments.ts`), guías de
   talles, provincias y contenido de la portada. Los tests de integridad viven en `tests/catalog.test.ts`.
 - `src/lib/` — lógica pura: `catalog`, `pricing` (envío gratis desde $150.000, 3 cuotas), `cart`
-  (reducer), `cartStorage` (localStorage), `checkout` (validación + pedido), `garmentInk`.
+  (reducer), `cartStorage` (localStorage), `checkout` (validación + pedido), `garmentInk`,
+  `analytics` (eventos para el `dataLayer` de GTM).
 - `src/context/` — `CartProvider` (estado + persistencia) y `useCart`.
 - `src/components/` y `src/pages/` — interfaz. `src/routes.tsx` define las rutas; `src/paths.ts`, las URLs.
 - `src/index.css` — tokens de diseño, roles tipográficos y utilidades (`button-primary`, `text-action`, `drawer`).
 - `tests/` — Vitest. `tests/ui/` monta la app completa con `tests/support/renderApp.tsx`.
-- `vite.config.ts` — plugins de React y Tailwind, completa `%SITE_URL%` en `index.html` y configura
-  Vitest (jsdom, `tests/setup.ts`).
+- `vite.config.ts` — plugins de React y Tailwind, completa `%SITE_URL%` en `index.html`, inyecta GTM
+  si hay `GTM_ID` y configura Vitest (jsdom, `tests/setup.ts`).
 - `vite/siteUrl.ts` — resuelve la URL pública al compilar (se testea en `tests/siteUrl.test.ts`).
+- `vite/gtm.ts` — valida `GTM_ID` y arma el snippet de GTM (se testea en `tests/gtm.test.ts`).
 - `vercel.json` — build, rewrite de la SPA y headers para Vercel.
 - `index.html` — title, meta, Open Graph y `noindex`. `public/` — favicon, ícono de iOS, `og.png` y `robots.txt`.
 - `.nvmrc` — Node 24.
