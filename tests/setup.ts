@@ -5,6 +5,8 @@ import { afterEach } from 'vitest'
 afterEach(() => {
   cleanup()
   localStorage.clear()
+  // Cada test arranca sin eventos de analytics de los anteriores.
+  delete window.dataLayer
 })
 
 // jsdom no implementa showModal() ni close() de <dialog>. Se reemplazan por lo que los tests
