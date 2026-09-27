@@ -42,9 +42,9 @@ Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
 (preview del link). 145 tests en verde (lógica + flujos de UI).
 
-Analytics en curso (2026-09-27), por partes: GTM se carga desde el build con `GTM_ID` y la app deja
-un `page_view` por página en el `dataLayer`. Falta configurar el contenedor y cargar `GTM_ID` en
-Vercel (ver Próximos pasos).
+Analytics en producción desde el 2026-09-27, armado por partes: GTM (`GTM-KQT4NCMT`, versión 2
+publicada) manda a GA4 (`G-L4T9WL46PD`) un `page_view` por página. Verificado en producción y en
+GA4 → Tiempo real. Faltan los eventos de ecommerce y las interacciones (ver Próximos pasos).
 
 **En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
 Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
@@ -72,18 +72,30 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
     compilar: `SITE_URL`, si no `VERCEL_PROJECT_PRODUCTION_URL` (Vercel la expone sola) y si no
     localhost. Una `SITE_URL` mal escrita corta el build.
   - `GTM_ID`: sin ella no se carga GTM, así local, las previews y los tests no mandan datos. En Vercel
-    va solo en Production; para probar GTM en local, en `.env.local`. `vite/gtm.ts` la valida (un ID
-    de GA4 pegado por error corta el build) e inyecta el snippet al principio del `<head>`, sin el
+    está solo en Production. Para probar GTM en local, en `.env.local`, y borrarla al terminar: con el
+    contenedor publicado, cada `npm run dev` manda visitas reales a GA4. `vite/gtm.ts` la valida (un
+    ID de GA4 pegado por error corta el build) e inyecta el snippet al principio del `<head>`, sin el
     `<noscript>`: la tienda no funciona sin JavaScript.
 - **Analytics: GTM → GA4, armado por partes.** Contenedor `GTM-KQT4NCMT`; la etiqueta de GA4
   (`G-L4T9WL46PD`) y qué se manda viven en el contenedor, no en el código. La app solo deja eventos en
   el `dataLayer` (`src/lib/analytics.ts`). Un primer intento (ID fijo en el código, solo el
   contenedor) se borró a propósito, con sus cuentas, para rehacerlo desde cero (revert `3a49b75`).
 - **`page_view` propio, uno por página** (`Layout`): cambiar el color (`?color`) o el orden
-  (`?orden`) cambia la URL pero no es otra página. Por eso, cuando el contenedor mande este evento,
-  en GA4 hay que apagar las page views automáticas por cambios del historial (medición mejorada): si
-  no, se cuentan dobles. En desarrollo StrictMode corre los efectos dos veces; una ref evita contar
-  dos veces la misma página.
+  (`?orden`) cambia la URL pero no es otra página. Por eso en GA4 están apagadas las page views
+  automáticas por cambios del historial (medición mejorada): si se prenden, se cuentan dobles. En
+  desarrollo StrictMode corre los efectos dos veces; una ref evita contar dos veces la misma página.
+- **Contenedor GTM:** variable constante `GA4 - ID de medición` (el ID en un solo lugar), variables de
+  capa de datos `DLV - page_location` y `DLV - page_title`, activador `CE - page_view` y etiquetas
+  `GA4 - Etiqueta de Google` (`send_page_view=false`, en Initialization - All Pages) y
+  `GA4 - page_view`. La versión 1 es el contenedor vacío: republicarla es el rollback.
+- **GA4:** zona horaria Argentina, pesos, retención de datos de 14 meses. En la medición mejorada
+  quedan scroll, clics de salida y descargas; las interacciones con formularios están apagadas
+  (contaban como envío cada intento fallido del checkout).
+- **Probar GTM:** con la Vista previa (Tag Assistant) en Chrome sin bloqueadores. Los bloqueadores de
+  trackers (Brave Shields, uBlock) frenan `gtm.js` y `/g/collect`, y Tag Assistant dice "no se ha
+  encontrado" aunque el snippet esté bien. Tag Assistant muestra el `page_view` propio como "Cambio
+  en el historial". Los hits se confirman en GA4 (DebugView o Tiempo real): la pestaña de red de la
+  extensión muestra 503 en `/g/collect` aunque lleguen.
 - **Dirección visual** (plan aprobado con `frontend-design`): el único color de la página es el de
   la ropa; la interfaz es blanco, negro y gris "lona". Tipografía Archivo (una sola familia, el
   ancho variable separa marca y títulos del resto), servida desde `src/assets/fonts` (OFL).
@@ -135,12 +147,11 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
 
 Analytics, por partes y con el OK de Tom en cada una:
 
-1. Contenedor: etiqueta de Google (`G-L4T9WL46PD`, sin page view automático) y etiqueta del
-   `page_view`. Probar con la Vista previa de GTM en local, publicar, cargar `GTM_ID` en Vercel
-   (Production) y apagar en GA4 las page views por cambios del historial.
-2. Eventos de ecommerce de GA4: listas, ficha, carrito, checkout y compra.
-3. Interacciones: color, guía de talles, orden del catálogo y errores al agregar o en el checkout.
-4. Plan de medición documentado y export del contenedor al repo.
+1. Eventos de ecommerce de GA4: listas, ficha, carrito, checkout y compra. Antes, decidir si se mide
+   `purchase` con los pedidos de prueba y cómo se nombran las listas (catálogo, "Un placard
+   resuelto", "Combinalo con").
+2. Interacciones: color, guía de talles, orden del catálogo y errores al agregar o en el checkout.
+3. Plan de medición documentado y export del contenedor al repo.
 
 Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview del link use ese dominio.
 
