@@ -51,7 +51,8 @@ Sin backend ni base de datos: el catálogo es estático y el carrito vive en `lo
 - Las prendas son dibujos SVG planos que se pintan con el color elegido: 14 dibujos para 20 productos.
 - El checkout valida los datos y genera un pedido de prueba. No pide datos de tarjeta.
 - Medición con Google Tag Manager, solo en producción: la app deja los eventos en el `dataLayer` y
-  el contenedor decide qué va a Google Analytics.
+  el contenedor decide qué va a Google Analytics. Qué se mide y cómo probarlo está en el
+  [plan de medición](docs/tracking-plan.md).
 - El sitio lleva `noindex`: es una tienda ficticia y no debería aparecer en buscadores.
   La preview del link al compartirlo funciona igual.
 
@@ -62,9 +63,11 @@ src/
   data/        catálogo, colores, dibujos de las prendas, guías de talles
   lib/         lógica pura: catálogo, precios, carrito, persistencia, checkout, analytics
   context/     estado del carrito
+  hooks/       un evento de medición por página
   components/  piezas de la interfaz
   pages/       una por ruta
 tests/         lógica en la raíz, flujos de la interfaz en tests/ui
+docs/          plan de medición y export del contenedor de GTM
 ```
 
 ## Deploy
