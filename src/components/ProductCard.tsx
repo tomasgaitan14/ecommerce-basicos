@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { COLORS } from '../data/colors'
+import { COLORS, type ColorId } from '../data/colors'
 import type { Product } from '../data/products'
-import { buildSelectItem, pushToDataLayer, type ItemList } from '../lib/analytics'
+import { COLOR_LOCATIONS, buildSelectColor, buildSelectItem, pushToDataLayer, type ItemList } from '../lib/analytics'
 import { formatPrice } from '../lib/pricing'
 import { PATHS } from '../paths'
 import { ColorSwatches } from './ColorSwatches'
@@ -18,6 +18,11 @@ interface ProductCardProps {
 export function ProductCard({ product, list, index }: ProductCardProps) {
   const [colorId, setColorId] = useState(product.colors[0])
   const href = PATHS.product(product.slug, colorId)
+
+  function selectColor(nextColorId: ColorId) {
+    setColorId(nextColorId)
+    pushToDataLayer(buildSelectColor(product, nextColorId, { location: COLOR_LOCATIONS.productCard, list }))
+  }
 
   // Un solo link por tarjeta: su ::after cubre toda la tarjeta, así que se toca en cualquier parte.
   // Las muestras de color quedan por encima (z-1, debajo del encabezado fijo) y siguen siendo tocables.
@@ -43,7 +48,7 @@ export function ProductCard({ product, list, index }: ProductCardProps) {
         <ColorSwatches
           colors={product.colors}
           selected={colorId}
-          onSelect={setColorId}
+          onSelect={selectColor}
           label={`Color de ${product.name}`}
         />
       </div>

@@ -2,17 +2,28 @@ import { useId, useRef } from 'react'
 import { SIZE_GUIDES, type SizeGuideId } from '../data/sizeGuides'
 import { closeOnBackdropClick } from './dialog'
 
-export function SizeGuideDialog({ guideId }: { guideId: SizeGuideId }) {
+interface SizeGuideDialogProps {
+  guideId: SizeGuideId
+  // Avisa cuando se abre la guía (la ficha lo usa para medirlo).
+  onOpen?: () => void
+}
+
+export function SizeGuideDialog({ guideId, onOpen }: SizeGuideDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const guide = SIZE_GUIDES[guideId]
+
+  function open() {
+    dialogRef.current?.showModal()
+    onOpen?.()
+  }
 
   return (
     <>
       <button
         type="button"
         aria-haspopup="dialog"
-        onClick={() => dialogRef.current?.showModal()}
+        onClick={open}
         className="text-action -my-3 text-sm"
       >
         Guía de talles

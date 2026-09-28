@@ -1,14 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import type { Product } from '../src/data/products'
 import {
+  ADD_TO_CART_ERRORS,
+  COLOR_LOCATIONS,
   ITEM_LISTS,
+  buildAddToCartError,
   buildCartEvent,
   buildCartLineChange,
+  buildCheckoutError,
   buildPageView,
   buildPurchase,
+  buildSelectColor,
   buildSelectItem,
+  buildSortCatalog,
   buildViewItem,
   buildViewItemList,
+  buildViewSizeGuide,
   catalogList,
   pushToDataLayer,
   toAnalyticsItem,
@@ -196,6 +203,51 @@ describe('buildPurchase', () => {
   })
 })
 
+describe('interacciones', () => {
+  it('select_color en la ficha manda el producto, el nombre del color y dónde se eligió', () => {
+    expect(buildSelectColor(tee, 'marino', { location: COLOR_LOCATIONS.productPage })).toEqual({
+      event: 'select_color',
+      interaction: { product_id: 'remera-clasica', color: 'Azul marino', location: 'ficha' },
+    })
+  })
+
+  it('select_color en una tarjeta suma la lista donde está la tarjeta', () => {
+    expect(buildSelectColor(tee, 'negro', { location: COLOR_LOCATIONS.productCard, list: ITEM_LISTS.placard })).toEqual({
+      event: 'select_color',
+      interaction: { product_id: 'remera-clasica', color: 'Negro', location: 'tarjeta', list_id: 'placard' },
+    })
+  })
+
+  it('view_size_guide manda el producto', () => {
+    expect(buildViewSizeGuide(hoodie)).toEqual({ event: 'view_size_guide', interaction: { product_id: 'buzo-capucha' } })
+  })
+
+  it('add_to_cart_error manda el motivo: sin talle o sin stock', () => {
+    expect(buildAddToCartError(tee, ADD_TO_CART_ERRORS.sizeRequired).interaction).toEqual({
+      product_id: 'remera-clasica',
+      reason: 'sin_talle',
+    })
+    expect(buildAddToCartError(tee, ADD_TO_CART_ERRORS.noStock).interaction).toEqual({
+      product_id: 'remera-clasica',
+      reason: 'sin_stock',
+    })
+  })
+
+  it('sort_catalog manda la lista y el orden elegido', () => {
+    expect(buildSortCatalog(catalogList(null), 'precio-asc')).toEqual({
+      event: 'sort_catalog',
+      interaction: { list_id: 'tienda', sort_order: 'precio-asc' },
+    })
+  })
+
+  it('checkout_error manda solo los nombres de los campos, en el orden en que llegan', () => {
+    expect(buildCheckoutError(['email', 'postalCode'])).toEqual({
+      event: 'checkout_error',
+      interaction: { error_fields: 'email,postalCode' },
+    })
+  })
+})
+
 describe('pushToDataLayer', () => {
   const pageView = buildPageView(ORIGIN, '/', 'basicos | Ropa lisa para hombre')
 
@@ -214,5 +266,11 @@ describe('pushToDataLayer', () => {
     const viewItem = buildViewItem(tee, 'negro')
     pushToDataLayer(viewItem)
     expect(window.dataLayer).toEqual([{ ecommerce: null }, viewItem])
+  })
+
+  it('antes de cada interacción vacía la anterior: GTM guarda los parámetros entre eventos', () => {
+    const sizeGuide = buildViewSizeGuide(tee)
+    pushToDataLayer(sizeGuide)
+    expect(window.dataLayer).toEqual([{ interaction: null }, sizeGuide])
   })
 })

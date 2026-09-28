@@ -4,7 +4,7 @@ import { ProductCard } from '../components/ProductCard'
 import { CATEGORIES, type Category } from '../data/categories'
 import { PRODUCTS } from '../data/products'
 import { useTrackOnce } from '../hooks/useTrackOnce'
-import { buildViewItemList, catalogList } from '../lib/analytics'
+import { buildSortCatalog, buildViewItemList, catalogList, pushToDataLayer } from '../lib/analytics'
 import {
   DEFAULT_SORT_ORDER,
   SORT_ORDERS,
@@ -43,6 +43,7 @@ function Catalog({ category }: { category: Category | null }) {
   function changeOrder(event: ChangeEvent<HTMLSelectElement>) {
     const next = parseSortOrder(event.target.value)
     setSearchParams(next === DEFAULT_SORT_ORDER ? {} : { [SORT_PARAM]: next }, { preventScrollReset: true })
+    pushToDataLayer(buildSortCatalog(list, next))
   }
 
   return (

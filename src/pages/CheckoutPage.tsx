@@ -13,7 +13,7 @@ import { OrderSummaryPanel } from '../components/OrderSummaryPanel'
 import { useCart } from '../context/cartContext'
 import { PROVINCES } from '../data/provinces'
 import { useTrackOnce } from '../hooks/useTrackOnce'
-import { ANALYTICS_EVENTS, buildCartEvent, buildPurchase, pushToDataLayer } from '../lib/analytics'
+import { ANALYTICS_EVENTS, buildCartEvent, buildCheckoutError, buildPurchase, pushToDataLayer } from '../lib/analytics'
 import {
   PAYMENT_METHODS,
   createOrder,
@@ -102,7 +102,9 @@ export function CheckoutPage() {
     if (!result.ok) {
       // Los mensajes tienen que estar en el DOM antes de mover el foco, para que se anuncien.
       flushSync(() => setErrors(result.errors))
-      const firstInvalid = FIELD_ORDER.find((field) => result.errors[field])
+      const invalidFields = FIELD_ORDER.filter((field) => result.errors[field])
+      pushToDataLayer(buildCheckoutError(invalidFields))
+      const firstInvalid = invalidFields[0]
       const element = firstInvalid ? formRef.current?.elements.namedItem(firstInvalid) : null
       if (element instanceof HTMLElement) element.focus()
       return

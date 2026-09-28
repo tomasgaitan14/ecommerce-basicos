@@ -11,7 +11,17 @@ import { COLORS, type ColorId } from '../data/colors'
 import { RETURN_WINDOW_DAYS } from '../data/policies'
 import type { Product } from '../data/products'
 import { useTrackOnce } from '../hooks/useTrackOnce'
-import { ITEM_LISTS, buildViewItem, buildViewItemList } from '../lib/analytics'
+import {
+  ADD_TO_CART_ERRORS,
+  COLOR_LOCATIONS,
+  ITEM_LISTS,
+  buildAddToCartError,
+  buildSelectColor,
+  buildViewItem,
+  buildViewItemList,
+  buildViewSizeGuide,
+  pushToDataLayer,
+} from '../lib/analytics'
 import { getCategory, getProductBySlug, getRelatedProducts, getVariantStock, isLowStock } from '../lib/catalog'
 import { FREE_SHIPPING_THRESHOLD, INSTALLMENTS, formatPrice, getInstallmentAmount } from '../lib/pricing'
 import { COLOR_PARAM, PATHS } from '../paths'
@@ -55,6 +65,7 @@ function ProductDetail({ product }: { product: Product }) {
     setSearchParams({ [COLOR_PARAM]: nextColorId }, { replace: true, preventScrollReset: true })
     if (size && getVariantStock(product.slug, nextColorId, size) === 0) setSize(null)
     setMessage('')
+    pushToDataLayer(buildSelectColor(product, nextColorId, { location: COLOR_LOCATIONS.productPage }))
   }
 
   function selectSize(nextSize: string) {
@@ -65,11 +76,13 @@ function ProductDetail({ product }: { product: Product }) {
   function handleAdd() {
     if (!size) {
       setMessage(MESSAGES.sizeRequired)
+      pushToDataLayer(buildAddToCartError(product, ADD_TO_CART_ERRORS.sizeRequired))
       return
     }
     const variant = { productSlug: product.slug, colorId, size }
     if (availableToAdd(variant) === 0) {
       setMessage(MESSAGES.noMoreStock)
+      pushToDataLayer(buildAddToCartError(product, ADD_TO_CART_ERRORS.noStock))
       return
     }
     setMessage('')
@@ -122,7 +135,12 @@ function ProductDetail({ product }: { product: Product }) {
           <div className="mt-7">
             <div className="mb-2 flex items-baseline justify-between text-sm">
               <span>Talle</span>
-              {product.sizeGuide && <SizeGuideDialog guideId={product.sizeGuide} />}
+              {product.sizeGuide && (
+                <SizeGuideDialog
+                  guideId={product.sizeGuide}
+                  onOpen={() => pushToDataLayer(buildViewSizeGuide(product))}
+                />
+              )}
             </div>
             <SizeSelector
               sizes={product.sizes}

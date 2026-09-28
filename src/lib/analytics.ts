@@ -2,13 +2,14 @@ import type { Category } from '../data/categories'
 import { COLORS, type ColorId } from '../data/colors'
 import type { Product } from '../data/products'
 import { getLineId, type CartLine, type CartState } from './cart'
-import { getCategory, getProductBySlug } from './catalog'
-import type { Order } from './checkout'
+import { getCategory, getProductBySlug, type SortOrder } from './catalog'
+import type { CheckoutField, Order } from './checkout'
 import { CURRENCY, type OrderSummary } from './pricing'
 
 // La app solo deja los eventos en el dataLayer de Google Tag Manager; qué se manda a Google
 // Analytics, y cómo, se configura en el contenedor. Sin GTM (local, previews, tests) el dataLayer
-// es un array que nadie lee. Los eventos de ecommerce siguen el formato recomendado de GA4.
+// es un array que nadie lee. Los eventos de ecommerce siguen el formato recomendado de GA4; las
+// interacciones son eventos propios con sus parámetros dentro de `interaction`.
 
 declare global {
   interface Window {
@@ -26,6 +27,11 @@ export const ANALYTICS_EVENTS = {
   viewCart: 'view_cart',
   beginCheckout: 'begin_checkout',
   purchase: 'purchase',
+  selectColor: 'select_color',
+  viewSizeGuide: 'view_size_guide',
+  addToCartError: 'add_to_cart_error',
+  sortCatalog: 'sort_catalog',
+  checkoutError: 'checkout_error',
 } as const
 
 type EventName<K extends keyof typeof ANALYTICS_EVENTS> = (typeof ANALYTICS_EVENTS)[K]
@@ -66,7 +72,28 @@ export type EcommerceEvent =
     }
   | { event: EventName<'purchase'>; ecommerce: ValuedEcommerce & { transaction_id: string; shipping: number } }
 
-export type AnalyticsEvent = PageViewEvent | EcommerceEvent
+// Los valores de los parámetros van en español, como los ids de las listas: son lo que se lee en
+// los informes de GA4. Los nombres de eventos y parámetros, en inglés, como los de GA4.
+export const COLOR_LOCATIONS = { productPage: 'ficha', productCard: 'tarjeta' } as const
+export const ADD_TO_CART_ERRORS = { sizeRequired: 'sin_talle', noStock: 'sin_stock' } as const
+type AddToCartError = (typeof ADD_TO_CART_ERRORS)[keyof typeof ADD_TO_CART_ERRORS]
+
+// En una tarjeta, el color se elige dentro de una lista; en la ficha, no.
+type ColorPlacement =
+  | { location: typeof COLOR_LOCATIONS.productPage }
+  | { location: typeof COLOR_LOCATIONS.productCard; list: ItemList }
+
+export type InteractionEvent =
+  | {
+      event: EventName<'selectColor'>
+      interaction: { product_id: string; color: string; location: ColorPlacement['location']; list_id?: string }
+    }
+  | { event: EventName<'viewSizeGuide'>; interaction: { product_id: string } }
+  | { event: EventName<'addToCartError'>; interaction: { product_id: string; reason: AddToCartError } }
+  | { event: EventName<'sortCatalog'>; interaction: { list_id: string; sort_order: SortOrder } }
+  | { event: EventName<'checkoutError'>; interaction: { error_fields: string } }
+
+export type AnalyticsEvent = PageViewEvent | EcommerceEvent | InteractionEvent
 
 // Nombres fijos a propósito, aunque coincidan con los títulos de la página: si cambia el texto de la
 // interfaz, los informes de GA4 no se cortan.
@@ -174,10 +201,41 @@ export function buildPurchase(order: Order): EcommerceEvent {
   }
 }
 
+export function buildSelectColor(product: Product, colorId: ColorId, placement: ColorPlacement): InteractionEvent {
+  const interaction = { product_id: product.slug, color: COLORS[colorId].name, location: placement.location }
+  return {
+    event: ANALYTICS_EVENTS.selectColor,
+    interaction: 'list' in placement ? { ...interaction, list_id: placement.list.item_list_id } : interaction,
+  }
+}
+
+export function buildViewSizeGuide(product: Product): InteractionEvent {
+  return { event: ANALYTICS_EVENTS.viewSizeGuide, interaction: { product_id: product.slug } }
+}
+
+export function buildAddToCartError(product: Product, reason: AddToCartError): InteractionEvent {
+  return { event: ANALYTICS_EVENTS.addToCartError, interaction: { product_id: product.slug, reason } }
+}
+
+export function buildSortCatalog(list: ItemList, order: SortOrder): InteractionEvent {
+  return { event: ANALYTICS_EVENTS.sortCatalog, interaction: { list_id: list.item_list_id, sort_order: order } }
+}
+
+// Solo los nombres de los campos, en el orden en que llegan (el del formulario): lo que la persona
+// escribió nunca sale de la página.
+export function buildCheckoutError(fields: readonly CheckoutField[]): InteractionEvent {
+  return { event: ANALYTICS_EVENTS.checkoutError, interaction: { error_fields: fields.join(',') } }
+}
+
+// Datos que GTM guarda y mezcla entre eventos: hay que vaciarlos antes de cada evento que los trae,
+// o uno heredaría los productos o los parámetros del anterior.
+const RESETTABLE_KEYS = ['ecommerce', 'interaction'] as const
+
 // GTM reemplaza el push del array al cargar: hay que leer window.dataLayer en cada evento.
 export function pushToDataLayer(event: AnalyticsEvent): void {
   window.dataLayer = window.dataLayer ?? []
-  // GTM mezcla los objetos del dataLayer: sin vaciar ecommerce, un evento heredaría los productos del anterior.
-  if ('ecommerce' in event) window.dataLayer.push({ ecommerce: null })
+  for (const key of RESETTABLE_KEYS) {
+    if (key in event) window.dataLayer.push({ [key]: null })
+  }
   window.dataLayer.push(event)
 }
