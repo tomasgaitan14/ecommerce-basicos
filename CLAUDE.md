@@ -40,12 +40,13 @@ ficha de producto, carrito lateral, checkout simulado, confirmación y 404. Buil
 Revisada en Chrome en escritorio y en 375, 390, 768 y 1024 px.
 
 Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, formularios) y `seo`
-(preview del link). 177 tests en verde (lógica + flujos de UI).
+(preview del link). 192 tests en verde (lógica + flujos de UI).
 
-Analytics en producción desde el 2026-09-27, armado por partes: GTM (`GTM-KQT4NCMT`, versión 3
-publicada) manda a GA4 (`G-L4T9WL46PD`) un `page_view` por página y los eventos de ecommerce (listas,
-ficha, carrito, checkout y compra). Probado con la Vista previa y en GA4 → Tiempo real. Faltan las
-interacciones (ver Próximos pasos).
+Analytics en producción desde el 2026-09-27, armado por partes: GTM (`GTM-KQT4NCMT`, versión 4
+publicada) manda a GA4 (`G-L4T9WL46PD`) un `page_view` por página, los eventos de ecommerce (listas,
+ficha, carrito, checkout y compra) y las interacciones (color, guía de talles, errores al agregar,
+orden del catálogo y errores del checkout). Probado con la Vista previa y en GA4 → Tiempo real. Falta
+documentar el plan de medición (ver Próximos pasos).
 
 **En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
 Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
@@ -100,19 +101,30 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
     se abre solo al agregar ya es `add_to_cart`.
 - **Carrito medido en `CartProvider`:** todo cambio de línea pasa por ahí y se mide contra el estado
   real (el reducer topea por stock). Vaciar el carrito después de comprar no se mide.
+- **Interacciones, eventos propios:** `select_color` (ficha y tarjetas; en las tarjetas, con la
+  lista), `view_size_guide`, `add_to_cart_error` (`sin_talle` o `sin_stock`), `sort_catalog` y
+  `checkout_error` (solo los nombres de los campos, nunca lo escrito). Los parámetros van dentro de
+  `interaction` y antes de cada evento se manda `{ interaction: null }`: GTM guarda los valores del
+  `dataLayer` entre eventos y, sin vaciarlos, un `sort_catalog` arrastraría el `color` del evento
+  anterior. Los valores van en español (decisión de Tom); los nombres de eventos y parámetros, en
+  inglés, como los de GA4.
 - **`useTrackOnce`** (`src/hooks/`): un evento por página, lista o ficha, también con StrictMode; lo
   usa el `page_view` del `Layout`. Los eventos de cada página salen antes que su `page_view` (los
   efectos de los hijos corren antes que los del `Layout`); no afecta los datos, porque cada hit lleva
   la URL y el título. `CatalogPage` se separó en dos, como la ficha, para que el hook corra antes del 404.
 - **Contenedor GTM:** variable constante `GA4 - ID de medición` (el ID en un solo lugar), variables de
-  capa de datos `DLV - page_location` y `DLV - page_title`, activadores `CE - page_view` y
-  `CE - ecommerce` (regex con los 8 eventos), y etiquetas `GA4 - Etiqueta de Google`
-  (`send_page_view=false`, en Initialization - All Pages), `GA4 - page_view` y `GA4 - ecommerce`
-  (evento `{{Event}}`, datos de ecommerce desde la capa de datos). Versión 3 publicada; republicar la
-  versión anterior es el rollback (la 1 es el contenedor vacío).
-- **GA4:** zona horaria Argentina, pesos, retención de datos de 14 meses y dimensión de ítem "Talle"
-  (`item_size`). En la medición mejorada quedan scroll, clics de salida y descargas; las
-  interacciones con formularios están apagadas (contaban como envío cada intento fallido del checkout).
+  capa de datos `DLV - page_location`, `DLV - page_title` y `DLV - interaction.*` (una por parámetro),
+  activadores `CE - page_view`, `CE - ecommerce` (regex con los 8 eventos) y `CE - interacciones`
+  (regex con los 5), y etiquetas `GA4 - Etiqueta de Google` (`send_page_view=false`, en
+  Initialization - All Pages), `GA4 - page_view`, `GA4 - ecommerce` (evento `{{Event}}`, datos de
+  ecommerce desde la capa de datos) y `GA4 - interacciones` (evento `{{Event}}` con los 7 parámetros;
+  GTM no manda los que el evento no trae). Versión 4 publicada; republicar la versión anterior es el
+  rollback (la 1 es el contenedor vacío).
+- **GA4:** zona horaria Argentina, pesos, retención de datos de 14 meses, dimensión de ítem "Talle"
+  (`item_size`) y una dimensión de evento por cada parámetro de las interacciones (Producto, Color,
+  Ubicación, Lista, Motivo, Orden y Campos con error). En la medición mejorada quedan scroll, clics de
+  salida y descargas; las interacciones con formularios están apagadas (contaban como envío cada
+  intento fallido del checkout).
 - **Probar GTM:** con la Vista previa (Tag Assistant) en Chrome sin bloqueadores. Los bloqueadores de
   trackers (Brave Shields, uBlock) frenan `gtm.js` y `/g/collect`, y Tag Assistant dice "no se ha
   encontrado" aunque el snippet esté bien. Tag Assistant muestra el `page_view` propio como "Cambio
@@ -170,8 +182,7 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
 
 Analytics, por partes y con el OK de Tom en cada una:
 
-1. Interacciones: color, guía de talles, orden del catálogo y errores al agregar o en el checkout.
-2. Plan de medición documentado y export del contenedor al repo.
+1. Plan de medición documentado y export del contenedor al repo.
 
 Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview del link use ese dominio.
 
@@ -181,7 +192,7 @@ Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview d
   talles, provincias y contenido de la portada. Los tests de integridad viven en `tests/catalog.test.ts`.
 - `src/lib/` — lógica pura: `catalog`, `pricing` (envío gratis desde $150.000, 3 cuotas), `cart`
   (reducer), `cartStorage` (localStorage), `checkout` (validación + pedido), `garmentInk`,
-  `analytics` (eventos para el `dataLayer` de GTM: `page_view` y ecommerce de GA4).
+  `analytics` (eventos para el `dataLayer` de GTM: `page_view`, ecommerce de GA4 e interacciones).
 - `src/context/` — `CartProvider` (estado + persistencia + eventos del carrito) y `useCart`.
 - `src/hooks/useTrackOnce.ts` — manda un evento una vez por página, lista o ficha.
 - `src/components/` y `src/pages/` — interfaz. `src/routes.tsx` define las rutas; `src/paths.ts`, las URLs.
