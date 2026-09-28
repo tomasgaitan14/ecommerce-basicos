@@ -45,8 +45,8 @@ Pasada final hecha (2026-09-27) con `ui-ux-pro-max` (zonas táctiles, foco, form
 Analytics en producción desde el 2026-09-27, armado por partes: GTM (`GTM-KQT4NCMT`, versión 4
 publicada) manda a GA4 (`G-L4T9WL46PD`) un `page_view` por página, los eventos de ecommerce (listas,
 ficha, carrito, checkout y compra) y las interacciones (color, guía de talles, errores al agregar,
-orden del catálogo y errores del checkout). Probado con la Vista previa y en GA4 → Tiempo real. Falta
-documentar el plan de medición (ver Próximos pasos).
+orden del catálogo y errores del checkout). Probado con la Vista previa y en GA4 → Tiempo real. El
+plan de medición está en `docs/tracking-plan.md` y el export de la versión 4, en `docs/gtm-container.json`.
 
 **En producción desde el 2026-09-27:** https://tiendabasicosecommerce.vercel.app
 Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomasgaitan14`).
@@ -119,12 +119,13 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
   Initialization - All Pages), `GA4 - page_view`, `GA4 - ecommerce` (evento `{{Event}}`, datos de
   ecommerce desde la capa de datos) y `GA4 - interacciones` (evento `{{Event}}` con los 7 parámetros;
   GTM no manda los que el evento no trae). Versión 4 publicada; republicar la versión anterior es el
-  rollback (la 1 es el contenedor vacío).
+  rollback (la 1 es el contenedor vacío). El export de la versión publicada vive en
+  `docs/gtm-container.json`, idéntico al que baja GTM: al publicar otra versión, reemplazarlo.
 - **GA4:** zona horaria Argentina, pesos, retención de datos de 14 meses, dimensión de ítem "Talle"
   (`item_size`) y una dimensión de evento por cada parámetro de las interacciones (Producto, Color,
   Ubicación, Lista, Motivo, Orden y Campos con error). En la medición mejorada quedan scroll, clics de
-  salida y descargas; las interacciones con formularios están apagadas (contaban como envío cada
-  intento fallido del checkout).
+  salida, búsqueda en el sitio, videos y descargas (sin buscador ni videos, esas dos no disparan); las
+  interacciones con formularios están apagadas (contaban como envío cada intento fallido del checkout).
 - **Probar GTM:** con la Vista previa (Tag Assistant) en Chrome sin bloqueadores. Los bloqueadores de
   trackers (Brave Shields, uBlock) frenan `gtm.js` y `/g/collect`, y Tag Assistant dice "no se ha
   encontrado" aunque el snippet esté bien. Tag Assistant muestra el `page_view` propio como "Cambio
@@ -180,9 +181,8 @@ Repo público: https://github.com/tomasgaitan14/ecommerce-basicos (cuenta `tomas
 
 ## Próximos pasos
 
-Analytics, por partes y con el OK de Tom en cada una:
-
-1. Plan de medición documentado y export del contenedor al repo.
+Nada pendiente del alcance acordado. Para sumar un evento, seguir el checklist de
+`docs/tracking-plan.md`.
 
 Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview del link use ese dominio.
 
@@ -203,6 +203,8 @@ Si se suma un dominio propio, definir `SITE_URL` en Vercel para que la preview d
   si hay `GTM_ID` y configura Vitest (jsdom, `tests/setup.ts`).
 - `vite/siteUrl.ts` — resuelve la URL pública al compilar (se testea en `tests/siteUrl.test.ts`).
 - `vite/gtm.ts` — valida `GTM_ID` y arma el snippet de GTM (se testea en `tests/gtm.test.ts`).
+- `docs/tracking-plan.md` — plan de medición: eventos, parámetros, GTM, GA4, cómo probar y cómo sumar
+  un evento. `docs/gtm-container.json` — export del contenedor publicado (importable en GTM).
 - `vercel.json` — build, rewrite de la SPA y headers para Vercel.
 - `index.html` — title, meta, Open Graph y `noindex`. `public/` — favicon, ícono de iOS, `og.png` y `robots.txt`.
 - `.nvmrc` — Node 24.
